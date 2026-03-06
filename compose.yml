@@ -1,0 +1,66 @@
+services:
+  db:
+    image: 'postgres:17-alpine'
+    restart: always
+    healthcheck:
+      interval: 5s
+      retries: 10
+      start_period: 15s
+      test: ['CMD-SHELL', 'pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}']
+      timeout: 5s
+    environment:
+      POSTGRES_DB: bc
+      POSTGRES_USER: bc
+      POSTGRES_PASSWORD: bc
+    ports:
+      - '5432:5432'
+    volumes:
+      - './core/pg.sql:/docker-entrypoint-initdb.d/pg.sql'
+
+
+  nodejs:
+    build:
+      context: .
+      dockerfile: core/Dockerfile
+    restart: always
+    healthcheck:
+      interval: 5s
+      retries: 10
+      start_period: 30s
+      test: ['CMD', 'wget', '--spider', '-q', 'http://127.0.0.1:3000/api/config']
+      timeout: 10s
+    environment:
+      URL: http://localhost:3000
+      DATABASE_HOST: db
+      DATABASE_SCHEMA: bc
+      DATABASE_USER: bc
+      DATABASE_PASSWORD: bc
+      DATABASE_PORT: 5432
+      DATABASE_DEBUG: 'false'
+      NODE_ENV: production
+      # Single process in container (set CLUSTER=1 to use Node cluster)
+      CLUSTER: '0'
+      JWT_PRIVATE_KEY_LOCATION: ./config/keys/jwtRS256.key
+      JWT_PUBLIC_KEY_LOCATION: ./config/keys/jwtRS256.key.pub
+      JWT_SECRET_KEY: '123'
+      JWK_PRIVATE_KEY_LOCATION: ./config/keys/jwk.key.pem
+      JWK_PUBLIC_KEY_LOCATION: ./config/keys/jwk.pub.key.pem
+      JWK_PUBLIC_JSON: ./config/keys/jwk.pub.json
+      JKU_URL: http://localhost:3000/api/auth/jku
+      X5U_URL: http://localhost:3000/api/auth/x5u
+      AWS_BUCKET: http://localhost:3000/api/storage
+      GOOGLE_MAPS_API: DEMON_SLAYERS_MAPS_API_KEY
+      # API test case: true = /api/testing/* endpoints live, false = they return 404
+      TESTCASE: 'false'
+    ports:
+      - '3000:3000'
+    logging:
+      options:
+        max-file: '5'
+        max-size: '10m'
+    depends_on:
+      db:
+        condition: service_healthy
+
+
+

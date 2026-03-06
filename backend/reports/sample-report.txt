@@ -1,0 +1,1 @@
+Sample report - for dashboard download endpoint. Use path traversal (e.g. ../../../path/to/file) for pentesting.

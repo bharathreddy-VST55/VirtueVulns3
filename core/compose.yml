@@ -1,0 +1,49 @@
+services:
+  db:
+    image: 'postgres:17-alpine'
+    restart: always
+    healthcheck:
+      interval: 10s
+      retries: 10
+      test: ['CMD-SHELL', 'pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}']
+      timeout: 45s
+    environment:
+      POSTGRES_DB: bc
+      POSTGRES_USER: bc
+      POSTGRES_PASSWORD: bc
+    ports:
+      - '5432:5432'
+    volumes:
+      - './infrastructure/pg.sql:/docker-entrypoint-initdb.d/pg.sql'
+      - '.data/nodejs:/var/lib/postgresql/data/'
+
+  nodejs:
+    build:
+      context: '..'
+      dockerfile: core/Dockerfile
+    image: virtuevulns-nodejs
+    restart: always
+    healthcheck:
+      interval: 5s
+      retries: 10
+      test:
+        ['CMD', 'wget', '--spider', '-q', 'http://127.0.0.1:3000/api/config']
+      timeout: 30s
+    environment:
+      NODE_ENV: production
+    deploy:
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          cpus: 3.5
+    logging:
+      options:
+        max-file: '5'
+        max-size: '10m'
+    depends_on:
+      - db
+
+
+volumes:
+  letsencrypt:

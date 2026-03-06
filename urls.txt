@@ -1,0 +1,11 @@
+  http://localhost:3000
+  http://localhost:3000/api/dashboard/debug?key=internal_debug_key_123
+  http://localhost:3000/api/dashboard/search?q=test
+  http://localhost:3000/api/dashboard/internal-secrets
+  http://localhost:3000/api/dashboard/error-test?trigger=1
+  http://localhost:3000/api/dashboard/download?file=sample-report.txt
+  http://localhost:3000/api/dashboard/activities/filter?filter=1
+  http://localhost:3000/api/dashboard/env
+  http://localhost:3000/api/dashboard/config
+  http://localhost:3000/api/dashboard/trace
+  http://localhost:3000/api/dashboard/version

@@ -1,0 +1,63 @@
+services:
+  db:
+    image: 'postgres:17-alpine'
+    restart: always
+    healthcheck:
+      interval: 10s
+      retries: 10
+      test: ['CMD-SHELL', 'pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}']
+      timeout: 45s
+    environment:
+      POSTGRES_DB: bc
+      POSTGRES_USER: bc
+      POSTGRES_PASSWORD: bc
+    ports:
+      - '5432:5432'
+    volumes:
+      - './core/pg.sql:/docker-entrypoint-initdb.d/pg.sql'
+
+  nodejs:
+    build:
+      context: '..'
+      dockerfile: core/Dockerfile
+    restart: always
+    healthcheck:
+      interval: 5s
+      retries: 10
+      test: ['CMD', 'wget', '--spider', '-q', 'http://nodejs:3000/api/config']
+      timeout: 30s
+    environment:
+      URL: http://localhost:3000
+      # Testing endpoints (/api/testing/*): TESTCASE=true to enable, false to disable
+      TESTCASE: 'false'
+      CHAT_API_URL: http://ollama:11434/v1/chat/completions
+      CHAT_API_MODEL: smollm:135m
+      CHAT_API_TOKEN: ''
+      CHAT_API_MAX_TOKENS: 200
+    ports:
+      - '3000:3000'
+    logging:
+      options:
+        max-file: '5'
+        max-size: '10m'
+    depends_on:
+      db:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+
+  ollama:
+    image: 'ollama/ollama:latest'
+    restart: always
+    healthcheck:
+      interval: 30s
+      retries: 5
+      test: ['CMD', 'ollama', 'list']
+      timeout: 10s
+      start_period: 60s
+    ports:
+      - '11434:11434'
+    logging:
+      options:
+        max-file: '5'
+        max-size: '10m'
